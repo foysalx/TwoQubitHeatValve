@@ -303,6 +303,36 @@ def rho_ss_termic_collective_Asym(w1: float, w2: float, gamma_local: float,
     L_full = R + liouvillian(0 * sz1, c_ops)  # No additional Hamiltonian term
     return steadystate(L_full, method='direct')
 
+def rho_ss_termic_collective_sub_Asym(w1: float, w2: float, gamma_local: float,
+                             T_local: float, gamma_deph: float,
+                             T_h: float, gamma_h:float,
+                             T_c: float, gamma_c:float,
+                             w0: float, Q1: float, sigma_sum: Qobj, sigma_sub: Qobj):
+    """Steady state with collective resonator coupling."""
+    # System Hamiltonian H = ½(ω1 σ_z^{(1)} + ω2 σ_z^{(2)})
+    H = 0.5 * (w1 * sz1 + w2 * sz2)
+    # Collective system operator that couples to the resonator mode
+    #sigma_h = sx1 + sx2
+    #sigma_c = sx1 - sx2
+    a_ops_coll_1 = [[sigma_sum,
+                   lambda w: J_h(w, T_h, gamma_h, w0, Q1)]]
+    R1 = bloch_redfield_tensor(H, a_ops_coll_1, fock_basis=True, sec_cutoff=-1)
+    a_ops_coll_2 = [[sigma_sub,
+                   lambda w: J_c(w, T_c, gamma_c, w0, Q1)]]
+    R2 = bloch_redfield_tensor(H, a_ops_coll_2, fock_basis=True, sec_cutoff=-1)
+    # Local Lindblad channels: thermal relaxation plus pure dephasing
+    c_ops = [
+        np.sqrt(gamma_local * (1 + nB(w1, T_local))) * sm1,
+        np.sqrt(gamma_local * nB(w1, T_local))       * sp1,
+        np.sqrt(gamma_local * (1 + nB(w2, T_local))) * sm2,
+        np.sqrt(gamma_local * nB(w2, T_local))       * sp2,
+        np.sqrt(gamma_deph) * sz1,
+        np.sqrt(gamma_deph) * sz2,
+    ]
+    L_full = R1 + R2 + liouvillian(0 * sz1, c_ops)  # No additional Hamiltonian term
+    return steadystate(L_full, method='direct')
+
+
 # Independent Steady State Density Matrix without Asymmetry
 
 def rho_ss_termic_indepentend(
