@@ -75,7 +75,7 @@ def J_h(w: float, T_h: float, gamma_h: float, w0: float, Q1: float) -> float:
     return (
         gamma_h * (1.0 + nb) * (w > epsilon) +
         gamma_h * nb * (w < -epsilon)
-    ) * Lor
+    ) * Lor 
 
 
 def J_c(w: float, T_c: float, gamma_c: float, w0: float, Q1: float) -> float:
