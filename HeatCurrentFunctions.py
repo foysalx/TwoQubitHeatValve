@@ -144,6 +144,8 @@ def Current_coll(w1: float, w2: float, rho, T_h: float, gamma_h: float,
                  w0: float, Q1: float, Jm_h: Qobj, Jp_h: Qobj) -> float:
     """Collective coupling heat current for a given steady state ρ."""
     Q_dot = 0.0
+    expect_res = 0.0
+    spectral_lor = 0.0
     if w1 == w2:  # Degenerate qubits ⇒ collective J_± jumps only
         En = np.array([w1, -w1])
         S = [Jm_h, Jp_h]
@@ -151,6 +153,9 @@ def Current_coll(w1: float, w2: float, rho, T_h: float, gamma_h: float,
             for j in range(2):
                 Q_dot += -J_h(+En[i], T_h, gamma_h, w0, Q1) * En[j] * \
                          expect((S[i].dag() * S[j] + S[j].dag() * S[i]), rho) / 2
+                expect_res += expect((S[i].dag() * S[j] + S[j].dag() * S[i]), rho) / 2
+                spectral_lor += -J_h(+En[i], T_h, gamma_h, w0, Q1) * En[j]
+
     else:  # Non degenerate case: revert to individual σ_± operators
         En = np.array([w1, w2, -w1, -w2])
         S = [sm1, sm2, sp1, sp2]
@@ -158,6 +163,8 @@ def Current_coll(w1: float, w2: float, rho, T_h: float, gamma_h: float,
             for j in range(4):
                 Q_dot += -J_h(+En[i], T_h, gamma_h, w0, Q1) * En[j] * \
                          expect((S[i].dag() * S[j] + S[j].dag() * S[i]), rho) / 2
+                expect_res += expect((S[i].dag() * S[j] + S[j].dag() * S[i]), rho) / 2
+                spectral_lor += -J_h(+En[i], T_h, gamma_h, w0, Q1) * En[j]
     return Q_dot
 
 
@@ -249,7 +256,7 @@ def rho_ss_termic_collective_sub(w1: float, w2: float, gamma_local: float,
                              T_local: float, gamma_deph: float,
                              T_h: float, gamma_h: float,
                              T_c: float, gamma_c: float,
-                             w0: float, Q1: float):
+                             w0: float, Q1: float, phase_factor: float):
     """Steady state with collective resonator coupling.
     The idea here is that we have collective system 
     operator of different pairities for each resonator mode.  """
@@ -257,7 +264,7 @@ def rho_ss_termic_collective_sub(w1: float, w2: float, gamma_local: float,
     H = 0.5 * (w1 * sz1 + w2 * sz2)
     # Collective system operator that couples to the resonator mode
     sigma_h = sx1 + sx2
-    sigma_c = sx1 - sx2
+    sigma_c = sx1 + phase_factor*sx2
     a_ops_coll_1 = [[sigma_h,
                    lambda w: J_h(w, T_h, gamma_h, w0, Q1)]]
     R1 = bloch_redfield_tensor(H, a_ops_coll_1, fock_basis=True, sec_cutoff=-1)
